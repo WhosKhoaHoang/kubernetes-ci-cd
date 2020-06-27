@@ -1,0 +1,75 @@
+===== Tutorial 1 =====
+https://www.linux.com/audience/enterprise/set-cicd-pipeline-kubernetes-part-1-overview/
+
+
+. Instead of using Kubernetes v1.6.0 when you start minikube, use v1.17.0 instead (v1.6.0 isn't supported with the version of minikube you installed)
+
+
+
+. Heapster no longer works as an addon
+
+
+
+. This command for bringing up the web dashboard doesn't work:
+minikube service kubernetes-dashboard --namespace kube-system
+
+because kubernetes-dashboard doesn't exist in the kube-system namespace by default. Looks like you need to run this command instead:
+
+minikube dashboard
+
+This is probably a difference between Kubernetes v1.6 (which the tutorial uses) and 1.17...
+
+
+
+. This command for creating a deployment doesn't work:
+kubectl run nginx --image nginx --port 80
+
+Use this instead
+kubectl create deployment --image=nginx nginx
+
+- "create" is one way to create deployments. You can also create deployments with "apply", which you need to pass a yaml file to. For "create", it doesn't seem like you need to pass a yaml file.
+- "rollout" seems to be another command associated with deployments
+
+
+
+The following command for creating and applying a yaml file for creating a local Docker image repository:
+kubectl apply -f manifests/registry.yaml
+seems to not create a valid yaml file. There are some changes you need to make -- in particular, within the bottommost block of configurations, you need to change apiVersion from extensions/v1beta1 to apps/v1 and add a selector section under the outermost spec section (there could be spec sections nested within spec sections). That selector section should look like this:
+  selector:
+    matchLabels:
+      app: registry
+
+This advice was presented on this page:
+https://github.com/kenzanlabs/kubernetes-ci-cd/issues/123
+
+
+
+
+. In the following command specified by the tutorial:
+docker build -t 127.0.0.1:30400/hello-kenzan:latest -f 
+ applications/hello-kenzan/Dockerfile applications/hello-kenzan
+
+127.0.0.1:30400 corresponds to the IP address and port for the local Docker image repository. This information is on display in the Kubernetes dashboard in the "Services" section in the registry row.
+
+
+
+. This command for deploying the hello-kenzan pod does not work:
+kubectl apply -f applications/hello-kenzan/k8s/manual-deployment.yaml
+
+Because of an improperly written manual-deployment.yaml file. Within the bottommost block of configurations, you need to change the apiVersion to apps/v1 and add this selector section under the outermost spec section (there could be spec sections nested within spec sections):
+  selector:
+    matchLabels:
+      app: hello-kenzan
+
+
+
+
+
+===== Tutorial 2 =====
+https://www.linux.com/audience/devops/set-cicd-pipeline-jenkins-pod-kubernetes-part-2/
+
+. You had to modify the yaml files for jenkins like how you had to modify them for services in tutorial 1 (i.e., changing the apiVersion and adding a spec section)
+
+
+
+***** COULD NOT PROGRESS FURTHER BECAUSE JENKINS POD TOOK UP TOO MUCH STORAGE *****
